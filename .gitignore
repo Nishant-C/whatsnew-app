@@ -1,0 +1,21 @@
+# Android / Gradle
+*.iml
+.gradle/
+/local.properties
+.idea/
+.DS_Store
+/build/
+app/build/
+captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Keystore files — never commit signing keys
+*.jks
+*.keystore
+
+# APKs / AABs (build artifacts; the debug APK is shared separately)
+/app/build/
+*.apk
+*.aab
