@@ -2,8 +2,6 @@ package com.whatsnew.app
 
 import android.Manifest
 import android.app.AppOpsManager
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -12,24 +10,51 @@ import android.os.Build
 import android.os.Bundle
 import android.os.Process
 import android.provider.Settings
-import android.text.method.ScrollingMovementMethod
-import android.view.MotionEvent
-import android.view.View
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.whatsnew.app.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var prefs: Prefs
-    private lateinit var adapter: IgnoredAppsAdapter
 
     private val notifPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    private val backupLauncher =
+        registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+            if (uri == null) return@registerForActivityResult
+            try {
+                contentResolver.openOutputStream(uri)?.use { out ->
+                    out.write(PrefsBackup.toJson(prefs.exportAll()).toByteArray(Charsets.UTF_8))
+                }
+                Toast.makeText(this, "Backup saved — keep the file safe", Toast.LENGTH_LONG).show()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Backup failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
+
+    private val restoreLauncher =
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+            if (uri == null) return@registerForActivityResult
+            try {
+                val json = contentResolver.openInputStream(uri)
+                    ?.bufferedReader(Charsets.UTF_8)?.readText()
+                    ?: return@registerForActivityResult
+                prefs.importAll(PrefsBackup.fromJson(json))
+                Toast.makeText(
+                    this,
+                    "Data restored — toggle monitoring off and on to apply",
+                    Toast.LENGTH_LONG
+                ).show()
+                refresh()
+            } catch (e: Exception) {
+                Toast.makeText(this, "Restore failed: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -45,23 +70,15 @@ class MainActivity : AppCompatActivity() {
             "How it works:\n" +
                 "1. Grant the two permissions below.\n" +
                 "2. Turn on monitoring.\n" +
-                "3. The first time you open each app, you'll see its current Play Store " +
-                "\"What's new\" once — this also confirms the app is working.\n" +
-                "4. After that, a popup appears only when the app updates AND its changelog changed.\n" +
+                "3. The first time you open each app, its current Play Store " +
+                "\"What's new\" is fetched quietly in the background — you'll see it " +
+                "the next time you open that app. This also confirms the app is working.\n" +
+                "4. When an app updates, its new changelog is fetched silently and " +
+                "shown instantly the next time you open the app — no waiting. " +
+                "A popup appears only when the changelog text actually changed.\n" +
                 "5. Tap \"Ignore this app\" on any popup to never hear about that app again.\n" +
-                "6. The ☰ menu (top left) opens the full activity log — check it if something looks wrong."
-
-        adapter = IgnoredAppsAdapter(
-            onRemove = { pkg ->
-                prefs.setIgnored(pkg, false)
-                refreshIgnored()
-                Toast.makeText(this, "Removed from ignore list", Toast.LENGTH_SHORT).show()
-            },
-            labelFor = { pkg -> appLabel(pkg) }
-        )
-        binding.ignoredList.layoutManager = LinearLayoutManager(this)
-        binding.ignoredList.adapter = adapter
-        binding.ignoredList.isNestedScrollingEnabled = false
+                "6. The ☰ menu (top left) holds the activity log, the ignored-apps list, " +
+                "and the latest update info fetched for each app."
 
         binding.monitorSwitch.isChecked = prefs.monitoringEnabled
         binding.monitorSwitch.setOnCheckedChangeListener { _, on ->
@@ -102,24 +119,6 @@ class MainActivity : AppCompatActivity() {
                 ).show()
             }
         }
-        binding.eventLog.movementMethod = ScrollingMovementMethod.getInstance()
-        // The outer screen scrolls too — without this it steals the gestures and
-        // the log box never scrolls.
-        binding.eventLog.setOnTouchListener { v, event ->
-            if (event.action == MotionEvent.ACTION_DOWN ||
-                event.action == MotionEvent.ACTION_MOVE
-            ) {
-                v.parent.requestDisallowInterceptTouchEvent(true)
-            }
-            false
-        }
-        binding.copyLogBtn.setOnClickListener {
-            val cm = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            cm.setPrimaryClip(
-                ClipData.newPlainText("What's New activity log", prefs.eventLog())
-            )
-            Toast.makeText(this, "Log copied to clipboard", Toast.LENGTH_SHORT).show()
-        }
     }
 
     override fun onResume() {
@@ -135,6 +134,22 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.menu_logs -> {
                     startActivity(Intent(this, LogsActivity::class.java))
+                    true
+                }
+                R.id.menu_ignored -> {
+                    startActivity(Intent(this, IgnoredAppsActivity::class.java))
+                    true
+                }
+                R.id.menu_updates -> {
+                    startActivity(Intent(this, UpdatesActivity::class.java))
+                    true
+                }
+                R.id.menu_backup -> {
+                    backupLauncher.launch("whatsnew-backup.json")
+                    true
+                }
+                R.id.menu_restore -> {
+                    restoreLauncher.launch(arrayOf("application/json"))
                     true
                 }
                 else -> false
@@ -180,23 +195,5 @@ class MainActivity : AppCompatActivity() {
         binding.overlayStatus.text = if (hasOverlay()) "Granted ✓" else "Not granted"
         val running = prefs.monitoringEnabled && hasUsageAccess() && hasOverlay()
         binding.serviceStatus.text = if (running) "Status: watching ✓" else "Status: off"
-        binding.eventLog.text = prefs.eventLog()
-            .ifBlank { "Nothing yet — open any app, then check back here." }
-        refreshIgnored()
-    }
-
-    private fun refreshIgnored() {
-        val list = prefs.ignoredApps().sorted()
-        adapter.submit(list)
-        binding.ignoredEmpty.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
-    }
-
-    private fun appLabel(pkg: String): String {
-        return try {
-            val ai = packageManager.getApplicationInfo(pkg, 0)
-            packageManager.getApplicationLabel(ai).toString()
-        } catch (_: Exception) {
-            pkg
-        }
     }
 }

@@ -11,12 +11,33 @@ android {
         applicationId = "com.whatsnew.app"
         minSdk = 28
         targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+        // Bump versionCode on every handoff: Android treats an APK as an
+        // update only when its versionCode is higher than the installed one.
+        versionCode = 4
+        versionName = "1.2"
+    }
+
+    // Permanent signing key: every APK handed to the user must carry the same
+    // signature or Android refuses to install it as an update (forcing an
+    // uninstall, which wipes app data). The auto-generated debug keystore
+    // lives under /root/.android and is lost on VM replacement — the Oct 2026
+    // key rotation is exactly what broke updates. This key lives in
+    // ~/workspace (persistent) instead; credentials in ~/.gradle/gradle.properties.
+    signingConfigs {
+        permanent {
+            storeFile file(findProperty("whatsnew.storeFile") ?: "../whatsnew.keystore")
+            storePassword findProperty("whatsnew.storePassword")
+            keyAlias findProperty("whatsnew.keyAlias")
+            keyPassword findProperty("whatsnew.keyPassword")
+        }
     }
 
     buildTypes {
+        debug {
+            signingConfig signingConfigs.permanent
+        }
         release {
+            signingConfig signingConfigs.permanent
             minifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
@@ -43,4 +64,6 @@ dependencies {
     implementation("androidx.recyclerview:recyclerview:1.3.2")
 
     testImplementation("junit:junit:4.13.2")
+    // Real org.json for JVM unit tests (on device the framework's copy is used).
+    testImplementation("org.json:json:20090211")
 }

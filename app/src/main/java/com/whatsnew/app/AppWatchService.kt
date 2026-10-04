@@ -16,8 +16,11 @@ import androidx.core.app.NotificationCompat
 
 /**
  * Foreground service that polls UsageStatsManager to detect foreground-app changes.
- * When an app's versionCode increased since we last saw it, it fetches the Play Store
- * "What's new" section; a popup is shown only if the changelog text itself changed.
+ * Two-phase open, so the popup never waits on a network fetch: when an app's
+ * versionCode increased since we last saw it, the Play Store "What's new"
+ * section is refreshed quietly in the background; the popup appears on the
+ * next open, instantly, from stored data — only if the changelog text itself
+ * changed since it was last shown.
  */
 class AppWatchService : Service() {
 
@@ -52,6 +55,7 @@ class AppWatchService : Service() {
     override fun onCreate() {
         super.onCreate()
         prefs = Prefs(this)
+        prefs.migrateShownChangelogs()
         handler = Handler(Looper.getMainLooper())
         startForeground(NOTIF_ID, buildNotification())
         handler.post(poll)
@@ -94,60 +98,48 @@ class AppWatchService : Service() {
         handleAppOpened(current)
     }
 
+    /**
+     * Two-phase open, so the popup never waits on a network fetch:
+     * - version changed (or first sighting): refresh the stored changelog
+     *   quietly in the background; no dialog now.
+     * - version unchanged: if the stored changelog hasn't been shown yet,
+     *   show it instantly from stored data.
+     */
+    private val inFlightFetches = mutableSetOf<String>()
+
     private fun handleAppOpened(pkg: String) {
         Thread {
             try {
                 val pi = packageManager.getPackageInfo(pkg, 0)
                 val versionCode = pi.longVersionCode
-                val stored = prefs.lastVersionCode(pkg)
-                val appName = appNameOf(pkg)
-                if (!UpdateDecider.shouldFetch(prefs.isIgnored(pkg), stored, versionCode)) {
-                    event("Saw $appName — no update, nothing to do.")
-                    return@Thread
-                }
                 val versionName = pi.versionName ?: ""
-                event("Update found for $appName — fetching changelog…")
+                val appName = appNameOf(pkg)
 
-                ChangelogFetcher(this).fetch(pkg, appName, { event(it) }) { changelog ->
-                    if (changelog.isNullOrBlank()) {
-                        // Don't mark the version as seen: retry next time the app is
-                        // opened, and give up after a few consecutive failures so
-                        // apps with no Play Store listing don't refetch forever.
-                        val fails = prefs.fetchFailures(pkg, versionCode) + 1
-                        prefs.setFetchFailures(pkg, versionCode, fails)
-                        when (FetchRetry.onFailure(fails - 1)) {
-                            FetchRetry.Outcome.RETRY ->
-                                event(
-                                    "Couldn't read the changelog for $appName " +
-                                        "(try $fails/${FetchRetry.MAX_ATTEMPTS}) — " +
-                                        "will retry next time you open it."
-                                )
-                            FetchRetry.Outcome.GIVE_UP -> {
-                                prefs.setLastVersionCode(pkg, versionCode)
-                                event(
-                                    "Couldn't read the changelog for $appName " +
-                                        "after $fails tries — skipping this version."
-                                )
-                            }
-                        }
-                        return@fetch
+                when (val action = UpdateDecider.decideOnOpen(
+                    prefs.isIgnored(pkg),
+                    prefs.lastVersionCode(pkg),
+                    versionCode,
+                    prefs.lastChangelog(pkg),
+                    prefs.shownChangelog(pkg)
+                )) {
+                    OpenAction.FetchInBackground ->
+                        fetchQuietly(pkg, appName, versionCode, versionName)
+                    is OpenAction.ShowStored -> {
+                        prefs.setShownChangelog(pkg, action.changelog)
+                        event("Showing changelog for $appName.")
+                        OverlayManager.show(
+                            this, pkg, appName,
+                            prefs.lastVersionName(pkg) ?: versionName,
+                            action.changelog,
+                            onIgnore = {
+                                prefs.setIgnored(pkg, true)
+                                event("$appName added to ignore list.")
+                            },
+                            onEvent = { event(it) }
+                        )
                     }
-                    prefs.setFetchFailures(pkg, versionCode, 0)
-                    prefs.setLastVersionCode(pkg, versionCode)
-                    if (!UpdateDecider.shouldShowPopup(changelog, prefs.lastChangelog(pkg))) {
-                        event("Changelog for $appName unchanged — no popup.")
-                        return@fetch
-                    }
-                    prefs.setLastChangelog(pkg, changelog)
-                    event("Showing changelog for $appName.")
-                    OverlayManager.show(
-                        this, pkg, appName, versionName, changelog,
-                        onIgnore = {
-                            prefs.setIgnored(pkg, true)
-                            event("$appName added to ignore list.")
-                        },
-                        onEvent = { event(it) }
-                    )
+                    OpenAction.Nothing ->
+                        event("Saw $appName — nothing new.")
                 }
             } catch (e: Exception) {
                 // Now recorded in the log instead of swallowed: with
@@ -155,6 +147,53 @@ class AppWatchService : Service() {
                 event("Couldn't inspect $pkg (${e.javaClass.simpleName}) — will retry next time.")
             }
         }.start()
+    }
+
+    /**
+     * Refreshes the stored changelog without showing anything. The popup,
+     * if the text changed, appears on the next open — from stored data, so
+     * it is instant. A fetch already running for [pkg] is not duplicated.
+     */
+    private fun fetchQuietly(pkg: String, appName: String, versionCode: Long, versionName: String) {
+        synchronized(inFlightFetches) {
+            if (!inFlightFetches.add(pkg)) return
+        }
+        event("Update found for $appName — fetching changelog in background…")
+
+        ChangelogFetcher(this).fetch(pkg, appName, { event(it) }) { changelog ->
+            synchronized(inFlightFetches) { inFlightFetches.remove(pkg) }
+            // The user may have tapped "Ignore this app" while we were fetching.
+            if (prefs.isIgnored(pkg)) return@fetch
+            if (changelog.isNullOrBlank()) {
+                // Don't mark the version as seen: retry next time the app is
+                // opened. After repeated failures the app has no readable
+                // Play Store listing, so it joins the ignore list (the user
+                // can remove it there to retry later).
+                val fails = prefs.fetchFailures(pkg, versionCode) + 1
+                prefs.setFetchFailures(pkg, versionCode, fails)
+                if (FetchRetry.onFailure(fails - 1) == FetchRetry.Outcome.GIVE_UP) {
+                    prefs.setIgnored(pkg, true)
+                    event(
+                        "Couldn't read the changelog for $appName " +
+                            "after $fails tries — added to ignore list."
+                    )
+                } else {
+                    event(
+                        "Couldn't read the changelog for $appName " +
+                            "(try $fails/${FetchRetry.MAX_ATTEMPTS}) — " +
+                            "will retry next time you open it."
+                    )
+                }
+                return@fetch
+            }
+            prefs.setFetchFailures(pkg, versionCode, 0)
+            prefs.setLastVersionCode(pkg, versionCode)
+            // Record the latest fetched info for the "Latest updates" screen
+            // on every successful fetch — even when the text didn't change.
+            prefs.setLastChangelog(pkg, changelog)
+            prefs.setLastVersionName(pkg, versionName)
+            event("Changelog for $appName fetched — you'll see it next time you open the app.")
+        }
     }
 
     private fun appNameOf(pkg: String): String {

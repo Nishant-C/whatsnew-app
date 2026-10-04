@@ -3,4 +3,16 @@
     <item
         android:id="@+id/menu_logs"
         android:title="Activity log" />
+    <item
+        android:id="@+id/menu_ignored"
+        android:title="Ignored apps" />
+    <item
+        android:id="@+id/menu_updates"
+        android:title="Latest updates" />
+    <item
+        android:id="@+id/menu_backup"
+        android:title="Back up data" />
+    <item
+        android:id="@+id/menu_restore"
+        android:title="Restore data" />
 </menu>

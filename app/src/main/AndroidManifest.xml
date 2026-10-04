@@ -14,8 +14,8 @@
 
     <application
         android:allowBackup="true"
-        android:icon="@drawable/ic_launcher"
-        android:roundIcon="@drawable/ic_launcher"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:theme="@style/Theme.WhatsNew">
 
@@ -37,6 +37,14 @@
 
         <activity
             android:name=".LogsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".IgnoredAppsActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".UpdatesActivity"
             android:exported="false" />
 
         <service

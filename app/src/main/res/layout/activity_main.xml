@@ -52,34 +52,6 @@
             android:text="Status: off"
             android:textAppearance="?attr/textAppearanceBodyMedium" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text="Activity log"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/eventLog"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:maxHeight="240dp"
-            android:scrollbars="vertical"
-            android:padding="12dp"
-            android:background="?attr/colorSurfaceVariant"
-            android:text="Nothing yet — open any app, then check back here."
-            android:textAppearance="?attr/textAppearanceBodySmall"
-            android:typeface="monospace" />
-
-        <Button
-            android:id="@+id/copyLogBtn"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="Copy log" />
-
         <Button
             android:id="@+id/testPopupBtn"
             android:layout_width="wrap_content"
@@ -155,27 +127,6 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
-            android:text="Ignored apps"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:textStyle="bold" />
-
-        <TextView
-            android:id="@+id/ignoredEmpty"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="No ignored apps yet. Tap “Ignore this app” on any popup to add one here."
-            android:textAppearance="?attr/textAppearanceBodyMedium" />
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/ignoredList"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp" />
     </LinearLayout>
     </ScrollView>
 </LinearLayout>

@@ -25,14 +25,48 @@ object UpdateDecider {
         if (fetched.isNullOrBlank()) return false
         return fetched.trim() != lastShown?.trim()
     }
+
+    /**
+     * What to do when an app is opened, under the prefetch design:
+     * - version changed (or first sighting) -> fetch quietly in the
+     *   background. No popup now: the dialog appears on a later open, from
+     *   stored data, so there is never a fetch-then-popup lag.
+     * - version unchanged -> show the stored changelog immediately if it
+     *   hasn't been shown yet.
+     */
+    fun decideOnOpen(
+        ignored: Boolean,
+        storedVersion: Long,
+        currentVersion: Long,
+        storedChangelog: String?,
+        shownChangelog: String?
+    ): OpenAction {
+        if (ignored) return OpenAction.Nothing
+        if (shouldFetch(false, storedVersion, currentVersion)) return OpenAction.FetchInBackground
+        if (shouldShowPopup(storedChangelog, shownChangelog)) {
+            return OpenAction.ShowStored(storedChangelog!!)
+        }
+        return OpenAction.Nothing
+    }
+}
+
+/** The three things an app open can lead to. */
+sealed interface OpenAction {
+    /** Version changed: refresh the stored changelog silently. */
+    data object FetchInBackground : OpenAction
+    /** Have fetched info the user hasn't seen: pop the dialog instantly. */
+    data class ShowStored(val changelog: String) : OpenAction
+    /** Nothing to do. */
+    data object Nothing : OpenAction
 }
 
 /**
  * Pure decision logic for changelog fetch retries.
  *
  * A failed fetch (page didn't load, timed out, no section found) is retried the
- * next time the app is opened, up to [MAX_ATTEMPTS]; then we give up on that
- * version so system apps without a Play Store listing don't refetch forever.
+ * next time the app is opened, up to [MAX_ATTEMPTS]; then the app is added to
+ * the ignore list so system apps without a Play Store listing don't refetch
+ * forever. The user can remove it from the ignore list to retry later.
  */
 object FetchRetry {
     const val MAX_ATTEMPTS = 3

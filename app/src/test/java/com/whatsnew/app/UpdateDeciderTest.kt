@@ -59,4 +59,73 @@ class UpdateDeciderTest {
     fun `first ever changelog pops up`() {
         assertTrue(UpdateDecider.shouldShowPopup("New stickers!", null))
     }
+
+    // decideOnOpen: the two-phase open (silent fetch, then instant popup)
+
+    @Test
+    fun `version change fetches in background without popping up`() {
+        assertEquals(
+            OpenAction.FetchInBackground,
+            UpdateDecider.decideOnOpen(
+                ignored = false, storedVersion = 499L, currentVersion = 500L,
+                storedChangelog = "Old news.", shownChangelog = "Old news."
+            )
+        )
+    }
+
+    @Test
+    fun `first sighting fetches in background without popping up`() {
+        assertEquals(
+            OpenAction.FetchInBackground,
+            UpdateDecider.decideOnOpen(
+                ignored = false, storedVersion = -1L, currentVersion = 500L,
+                storedChangelog = null, shownChangelog = null
+            )
+        )
+    }
+
+    @Test
+    fun `next open after a silent fetch shows the stored changelog instantly`() {
+        assertEquals(
+            OpenAction.ShowStored("New stickers!"),
+            UpdateDecider.decideOnOpen(
+                ignored = false, storedVersion = 500L, currentVersion = 500L,
+                storedChangelog = "New stickers!", shownChangelog = "Bug fixes."
+            )
+        )
+    }
+
+    @Test
+    fun `already-shown changelog does nothing`() {
+        assertEquals(
+            OpenAction.Nothing,
+            UpdateDecider.decideOnOpen(
+                ignored = false, storedVersion = 500L, currentVersion = 500L,
+                storedChangelog = "Bug fixes.", shownChangelog = "Bug fixes."
+            )
+        )
+    }
+
+    @Test
+    fun `unchanged changelog after update does nothing on next open`() {
+        // Update fetched, but the text matches what was already shown.
+        assertEquals(
+            OpenAction.Nothing,
+            UpdateDecider.decideOnOpen(
+                ignored = false, storedVersion = 500L, currentVersion = 500L,
+                storedChangelog = "Bug fixes.", shownChangelog = "Bug fixes."
+            )
+        )
+    }
+
+    @Test
+    fun `ignored app never fetches nor shows`() {
+        assertEquals(
+            OpenAction.Nothing,
+            UpdateDecider.decideOnOpen(
+                ignored = true, storedVersion = 499L, currentVersion = 500L,
+                storedChangelog = "New stickers!", shownChangelog = null
+            )
+        )
+    }
 }
