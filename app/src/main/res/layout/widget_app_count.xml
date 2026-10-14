@@ -14,10 +14,11 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <View
+        <ImageView
             android:layout_width="7dp"
             android:layout_height="7dp"
-            android:background="@drawable/widget_dot" />
+            android:src="@drawable/widget_dot"
+            android:contentDescription="" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -26,7 +27,6 @@
             android:text="WHAT'S NEW"
             android:textSize="9sp"
             android:textStyle="bold"
-            android:letterSpacing="0.2"
             android:textColor="#8A93A6" />
     </LinearLayout>
 

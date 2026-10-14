@@ -16,22 +16,23 @@ data class InstalledAppInfo(
 
 /**
  * Installed-app listing, shared by the "Installed apps" screen and the
- * home-screen widget. Only user apps are listed: system apps can't be
- * uninstalled, so counting them would make the "reduce your apps" number
- * un-actionable. The one exception is system apps the user updated —
- * those can be uninstalled back to their factory version.
+ * home-screen widget. Only user-installed apps are listed: system apps
+ * cannot be uninstalled, so counting them would make the "reduce your
+ * apps" number un-actionable — and updated system apps can only have
+ * their updates removed, not the app itself.
  */
 object InstalledApps {
 
     /**
      * Whether an app with these [ApplicationInfo] flags counts as a
-     * user app: everything without the system flag, plus system apps the
-     * user updated (those can be uninstalled back to their factory version).
+     * user-installed app: strictly apps without the system flag. System apps
+     * cannot be uninstalled (at most disabled), and updated system apps can
+     * only have their updates removed — not the app itself — so neither
+     * belongs in an "apps you can uninstall" list.
      * Takes raw flags so it stays unit-testable without Android classes.
      */
     fun isUserApp(flags: Int): Boolean =
-        (flags and ApplicationInfo.FLAG_SYSTEM) == 0 ||
-            (flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+        (flags and ApplicationInfo.FLAG_SYSTEM) == 0
 
     fun filterUserApps(infos: List<ApplicationInfo>): List<ApplicationInfo> =
         infos.filter { isUserApp(it.flags) }

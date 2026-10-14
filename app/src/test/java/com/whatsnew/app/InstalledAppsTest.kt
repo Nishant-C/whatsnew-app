@@ -23,8 +23,10 @@ class InstalledAppsTest {
     }
 
     @Test
-    fun userApp_updatedSystemApp_isUserApp() {
-        assertTrue(
+    fun userApp_updatedSystemApp_isNotUserApp() {
+        // Uninstall on an updated system app only removes its updates,
+        // not the app itself — so it does not belong in the list.
+        assertFalse(
             InstalledApps.isUserApp(
                 flags(
                     ApplicationInfo.FLAG_SYSTEM,

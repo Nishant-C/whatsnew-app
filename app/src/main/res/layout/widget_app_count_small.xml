@@ -14,7 +14,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="–"
-        android:textSize="40sp"
+        android:textSize="36sp"
         android:textStyle="bold"
         android:textColor="#101828" />
 
@@ -28,15 +28,15 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="apps installed"
-            android:textSize="13sp"
+            android:text="apps"
+            android:textSize="12sp"
             android:textColor="#5B6478" />
 
         <ProgressBar
             android:id="@+id/widgetProgress"
             android:layout_width="match_parent"
             android:layout_height="6dp"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="5dp"
             style="?android:attr/progressBarStyleHorizontal"
             android:progressDrawable="@drawable/widget_progress"
             android:max="150"
@@ -46,9 +46,9 @@
             android:id="@+id/widgetGoal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="5dp"
+            android:layout_marginTop="4dp"
             android:text="–"
-            android:textSize="11sp"
+            android:textSize="10sp"
             android:textColor="#8A93A6" />
     </LinearLayout>
 </LinearLayout>
