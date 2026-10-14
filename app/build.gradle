@@ -13,7 +13,7 @@ android {
         targetSdk = 34
         // Bump versionCode on every handoff: Android treats an APK as an
         // update only when its versionCode is higher than the installed one.
-        versionCode = 6
+        versionCode = 7
         versionName = "1.3"
     }
 

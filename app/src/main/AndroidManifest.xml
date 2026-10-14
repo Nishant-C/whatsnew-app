@@ -11,6 +11,10 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Since Android P, the system uninstaller silently refuses to open
+         without this permission (no dialog appears at all). Normal
+         protection level: granted automatically at install. -->
+    <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES" />
 
     <application
         android:allowBackup="true"
@@ -57,6 +61,8 @@
             android:label="What's New — App count">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <!-- Refresh the widget when the system theme flips. -->
+                <action android:name="android.intent.action.CONFIGURATION_CHANGED" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />
@@ -75,6 +81,8 @@
             android:label="What's New — App count (compact)">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <!-- Refresh the widget when the system theme flips. -->
+                <action android:name="android.intent.action.CONFIGURATION_CHANGED" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.PACKAGE_ADDED" />

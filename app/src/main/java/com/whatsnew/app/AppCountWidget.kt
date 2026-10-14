@@ -6,22 +6,34 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.widget.RemoteViews
 
 /**
  * Home-screen widget: your live installed-app count against your goal.
- * Two sizes share this logic — the 2x2 "Clean Count" and the compact 2x1.
+ * Two sizes share this logic — the 2x2 "Clean Count" and the compact 2x1 —
+ * each in a light and a dark variant chosen from the system theme.
  * The count refreshes whenever an app is installed, removed, or updated
- * (package broadcasts), and whenever the goal changes in the app.
+ * (package broadcasts), when the goal changes in the app, and when the
+ * system theme flips (configuration change).
  */
 object AppCountWidget {
 
+    fun isNightMode(context: Context): Boolean =
+        (context.resources.configuration.uiMode and
+            Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES
+
     fun updateAll(context: Context) {
         val mgr = AppWidgetManager.getInstance(context)
-        updateFor(mgr, context, AppCountWidgetProvider::class.java, R.layout.widget_app_count)
+        val night = isNightMode(context)
         updateFor(
-            mgr, context,
-            AppCountWidgetSmallProvider::class.java, R.layout.widget_app_count_small
+            mgr, context, AppCountWidgetProvider::class.java,
+            if (night) R.layout.widget_app_count_dark else R.layout.widget_app_count
+        )
+        updateFor(
+            mgr, context, AppCountWidgetSmallProvider::class.java,
+            if (night) R.layout.widget_app_count_small_dark
+            else R.layout.widget_app_count_small
         )
     }
 
@@ -69,7 +81,8 @@ abstract class AppCountWidgetProviderBase : AppWidgetProvider() {
         when (intent.action) {
             Intent.ACTION_PACKAGE_ADDED,
             Intent.ACTION_PACKAGE_REMOVED,
-            Intent.ACTION_PACKAGE_REPLACED -> AppCountWidget.updateAll(context)
+            Intent.ACTION_PACKAGE_REPLACED,
+            Intent.ACTION_CONFIGURATION_CHANGED -> AppCountWidget.updateAll(context)
             else -> super.onReceive(context, intent)
         }
     }

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2x1 compact Clean Count widget, dark theme -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@drawable/widget_background_small_dark"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/widgetCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="–"
+        android:textSize="36sp"
+        android:textStyle="bold"
+        android:textColor="#F1F3F9" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:layout_marginStart="12dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="apps"
+            android:textSize="12sp"
+            android:textColor="#9AA3B5" />
+
+        <ProgressBar
+            android:id="@+id/widgetProgress"
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_marginTop="5dp"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:progressDrawable="@drawable/widget_progress_dark"
+            android:max="150"
+            android:progress="0" />
+
+        <TextView
+            android:id="@+id/widgetGoal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="–"
+            android:textSize="10sp"
+            android:textColor="#7E8799" />
+    </LinearLayout>
+</LinearLayout>

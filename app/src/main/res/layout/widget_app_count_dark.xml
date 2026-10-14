@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 2x2 Clean Count widget, dark theme -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widgetRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background_dark"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:src="@drawable/widget_dot_dark"
+            android:contentDescription="" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:text="WHAT'S NEW"
+            android:textSize="9sp"
+            android:textStyle="bold"
+            android:textColor="#7E8799" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/widgetCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="–"
+        android:textSize="54sp"
+        android:textStyle="bold"
+        android:textColor="#F1F3F9" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="apps installed"
+        android:textSize="13sp"
+        android:textColor="#9AA3B5" />
+
+    <ProgressBar
+        android:id="@+id/widgetProgress"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="12dp"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:progressDrawable="@drawable/widget_progress_dark"
+        android:max="150"
+        android:progress="0" />
+
+    <TextView
+        android:id="@+id/widgetGoal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:text="–"
+        android:textSize="11sp"
+        android:textColor="#7E8799" />
+</LinearLayout>

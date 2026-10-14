@@ -105,6 +105,13 @@ class InstalledAppsActivity : AppCompatActivity() {
     }
 
     private fun uninstall(app: InstalledAppInfo) {
-        startActivity(Intent(Intent.ACTION_DELETE, Uri.parse("package:${app.pkg}")))
+        val intent = Intent(Intent.ACTION_DELETE, Uri.parse("package:${app.pkg}"))
+        prefs.addEvent("Uninstall requested: ${app.name} (${app.pkg})")
+        try {
+            startActivity(intent)
+        } catch (e: Exception) {
+            prefs.addEvent("Uninstall failed to open: ${e.message}")
+            Toast.makeText(this, "Couldn't open the uninstaller", Toast.LENGTH_LONG).show()
+        }
     }
 }
