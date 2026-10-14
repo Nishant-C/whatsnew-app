@@ -88,6 +88,11 @@ class Prefs(context: Context) {
         e.putBoolean("shown_migrated", true).apply()
     }
 
+    /** Target for the "Installed apps" screen and the home-screen widget. */
+    var appCountGoal: Int
+        get() = sp.getInt("app_count_goal", 150)
+        set(v) = sp.edit().putInt("app_count_goal", v.coerceAtLeast(1)).apply()
+
     /** Human-readable description of what the watcher last did (shown in the app). */
     var lastEvent: String
         get() = sp.getString("last_event", "Nothing yet — open any app, then check back here.")!!

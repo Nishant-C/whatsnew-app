@@ -78,7 +78,8 @@ class MainActivity : AppCompatActivity() {
                 "A popup appears only when the changelog text actually changed.\n" +
                 "5. Tap \"Ignore this app\" on any popup to never hear about that app again.\n" +
                 "6. The ☰ menu (top left) holds the activity log, the ignored-apps list, " +
-                "and the latest update info fetched for each app."
+                "the latest update info fetched for each app, and the installed-apps " +
+                "list where you can uninstall apps you don't need."
 
         binding.monitorSwitch.isChecked = prefs.monitoringEnabled
         binding.monitorSwitch.setOnCheckedChangeListener { _, on ->
@@ -142,6 +143,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.menu_updates -> {
                     startActivity(Intent(this, UpdatesActivity::class.java))
+                    true
+                }
+                R.id.menu_installed -> {
+                    startActivity(Intent(this, InstalledAppsActivity::class.java))
                     true
                 }
                 R.id.menu_backup -> {

@@ -47,6 +47,46 @@
             android:name=".UpdatesActivity"
             android:exported="false" />
 
+        <activity
+            android:name=".InstalledAppsActivity"
+            android:exported="false" />
+
+        <receiver
+            android:name=".AppCountWidgetProvider"
+            android:exported="false"
+            android:label="What's New — App count">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <action android:name="android.intent.action.PACKAGE_REMOVED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <data android:scheme="package" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_app_count" />
+        </receiver>
+
+        <receiver
+            android:name=".AppCountWidgetSmallProvider"
+            android:exported="false"
+            android:label="What's New — App count (compact)">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.PACKAGE_ADDED" />
+                <action android:name="android.intent.action.PACKAGE_REMOVED" />
+                <action android:name="android.intent.action.PACKAGE_REPLACED" />
+                <data android:scheme="package" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_app_count_small" />
+        </receiver>
+
         <service
             android:name=".AppWatchService"
             android:exported="false"

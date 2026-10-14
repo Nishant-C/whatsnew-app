@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">What\'s New</string>
+    <string name="widget_description">Your installed app count, against your goal to trim down.</string>
+    <string name="widget_description_small">Your installed app count in one slim row, against your goal.</string>
 </resources>

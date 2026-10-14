@@ -10,6 +10,9 @@
         android:id="@+id/menu_updates"
         android:title="Latest updates" />
     <item
+        android:id="@+id/menu_installed"
+        android:title="Installed apps" />
+    <item
         android:id="@+id/menu_backup"
         android:title="Back up data" />
     <item
